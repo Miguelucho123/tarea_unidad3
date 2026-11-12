@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Prácticas UCN | Prototipo Unidad 3</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-symbol">✦</div>
+        <div>
+          <strong>PRÁCTICAS <span>UCN</span></strong>
+          <small>Plataforma académica · MVP</small>
+        </div>
+      </div>
+      <div class="sidebar-caption">ESPACIO DE TRABAJO</div>
+      <nav class="menu" aria-label="Navegación principal">
+        <button class="nav-item active" data-tab="panel"><span>◫</span> Resumen general</button>
+        <button class="nav-item" data-tab="ofertas"><span>▤</span> Ofertas disponibles</button>
+        <button class="nav-item" data-tab="publicar"><span>⊕</span> Publicar oferta</button>
+        <button class="nav-item" data-tab="postulaciones"><span>◉</span> Mis postulaciones</button>
+        <button class="nav-item" data-tab="revision"><span>☑</span> Coordinación</button>
+      </nav>
+      <div class="side-note">
+        <span class="dot"></span><b>Ambiente de pruebas</b>
+        <small>Datos ficticios para evaluación.<br>No usar información real.</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <span class="breadcrumb">Ingeniería de Software <span>/</span> Taller Integrador · Unidad 3</span>
+        <div class="top-actions">
+          <label for="studentPick">Estudiante demo</label>
+          <select id="studentPick" aria-label="Seleccionar estudiante"></select>
+          <div class="avatar">IS</div>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">PROTOTIPO FUNCIONAL · VERSIÓN 0.1</div>
+            <h1 id="sectionTitle">Gestión de prácticas<br><em>más clara, de principio a fin.</em></h1>
+            <p id="sectionDescription">Ofertas, postulaciones y revisión institucional en un mismo lugar. Demostración académica de los requisitos RF02, RF03 y RF04.</p>
+            <div class="hero-tags">
+              <span>✓ Persistencia SQLite</span>
+              <span>✓ API FastAPI</span>
+              <span>✓ Pruebas automatizadas</span>
+            </div>
+          </div>
+          <div class="hero-art">
+            <div class="orbit one"></div>
+            <div class="orbit two"></div>
+            <div class="center-mark">UCN<small>MVP 0.1</small></div>
+          </div>
+        </div>
+
+        <div id="notification" role="status" aria-live="polite" hidden></div>
+
+        <section id="tab-panel" class="tab-section">
+          <div class="section-head">
+            <h2>Indicadores del prototipo</h2>
+            <span class="hint">Actualizados en cada operación</span>
+          </div>
+          <div class="stats">
+            <article class="stat"><span>Vacantes publicadas</span><strong id="statOffers">—</strong><small>Empresas vinculadas</small></article>
+            <article class="stat"><span>Postulaciones registradas</span><strong id="statApps">—</strong><small>Historial persistente</small></article>
+            <article class="stat"><span>Pendientes de revisión</span><strong id="statPending">—</strong><small>Bandeja de coordinación</small></article>
+          </div>
+          <div class="two-col">
+            <div class="panel">
+              <div class="section-head">
+                <h2>¿Qué permite este MVP?</h2>
+              </div>
+              <div class="feature-list">
+                <div>
+                  <span class="feature-icon">01</span>
+                  <div><strong>Publicación de vacantes</strong><p>Empresa crea una oferta y la incorpora al catálogo.</p></div>
+                </div>
+                <div>
+                  <span class="feature-icon">02</span>
+                  <div><strong>Postulación controlada</strong><p>Estudiante se postula una vez a cada vacante.</p></div>
+                </div>
+                <div>
+                  <span class="feature-icon">03</span>
+                  <div><strong>Revisión de solicitudes</strong><p>Coordinación aprueba o rechaza con cambio de estado.</p></div>
+                </div>
+              </div>
+            </div>
+            <div class="panel muted-panel">
+              <span class="overline">ALCANCE DE LA DEMO</span>
+              <h3>Flujo comprobable</h3>
+              <p>Publica una vacante, postúlate como estudiante y revisa la solicitud desde Coordinación.</p>
+              <div class="mini-flow">
+                <span>Empresa</span><b>→</b><span>Estudiante</span><b>→</b><span>Coordinación</span>
+              </div>
+              <button class="primary-btn" data-switch="ofertas">Explorar vacantes <span>↗</span></button>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-ofertas" class="tab-section" hidden>
+          <div class="section-head">
+            <h2>Ofertas de práctica</h2>
+            <span class="hint" id="offerCount"></span>
+          </div>
+          <div id="offerCards" class="offer-grid"></div>
+        </section>
+
+        <section id="tab-publicar" class="tab-section" hidden>
+          <div class="section-head">
+            <h2>Publicar nueva oferta</h2>
+            <span class="hint">Módulo 1 · RF02</span>
+          </div>
+          <div class="panel form-panel">
+            <form id="offerForm">
+              <label>Empresa que publica<select name="empresa_id" id="companyPick" required></select></label>
+              <label>Título de la vacante<input name="titulo" minlength="5" maxlength="100" placeholder="Ej. Practicante de aseguramiento de calidad" required></label>
+              <label>Descripción de actividades<textarea name="descripcion" minlength="12" maxlength="1000" rows="4" placeholder="Describe el propósito y las principales tareas..." required></textarea></label>
+              <label>Modalidad<select name="modalidad"><option>Remota</option><option>Híbrida</option><option>Presencial</option></select></label>
+              <button class="primary-btn" type="submit">Publicar oferta <span>↗</span></button>
+            </form>
+          </div>
+        </section>
+
+        <section id="tab-postulaciones" class="tab-section" hidden>
+          <div class="section-head">
+            <h2>Mis postulaciones</h2>
+            <span class="hint">Módulo 2 · RF03</span>
+          </div>
+          <div class="panel">
+            <div id="myApplications" class="application-list"></div>
+          </div>
+        </section>
+
+        <section id="tab-revision" class="tab-section" hidden>
+          <div class="section-head">
+            <h2>Bandeja de coordinación</h2>
+            <span class="hint">Módulo 3 · RF04</span>
+          </div>
+          <div class="panel">
+            <div id="reviewList" class="application-list"></div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="footer">Taller 3 · Ingeniería de Software · UCN <span>Prototipo académico, sin autenticación real ni datos personales</span></footer>
+    </main>
+  </div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
