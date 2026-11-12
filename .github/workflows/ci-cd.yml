@@ -1,0 +1,116 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  pruebas:
+    name: Pruebas unitarias y de API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Ejecutar pytest
+        run: |
+          mkdir -p evidencias
+          python -m pytest -v tests --junitxml=evidencias/pytest.xml | tee evidencias/resultado_pytest.txt
+
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-pytest
+          path: evidencias/
+
+  e2e:
+    name: Recorrido e2e con Playwright
+    needs: pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Instalar Chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Ejecutar recorrido
+        run: python scripts/capturar_evidencias.py
+
+      - name: Guardar capturas
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: capturas-e2e
+          path: evidencias/
+
+  despliegue:
+    name: Despliegue en Render
+    needs: [pruebas, e2e]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: produccion
+      url: ${{ vars.APP_URL }}
+    env:
+      DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      APP_URL: ${{ vars.APP_URL }}
+    steps:
+      - name: Revisar configuración
+        if: env.DEPLOY_HOOK == ''
+        run: |
+          echo "::error::Falta el secreto RENDER_DEPLOY_HOOK_URL. Los pasos están en el README, sección Despliegue."
+          exit 1
+
+      - name: Lanzar despliegue
+        run: curl -fsS -X POST "$DEPLOY_HOOK" -o /dev/null
+
+      - name: Esperar la nueva versión
+        if: env.APP_URL != ''
+        run: |
+          url="${APP_URL%/}/api/health"
+          for intento in $(seq 1 60); do
+            commit=$(curl -fsS --max-time 60 "$url" | jq -r '.commit // empty' || true)
+            if [ "$commit" = "$GITHUB_SHA" ]; then
+              echo "Versión $GITHUB_SHA publicada en $APP_URL"
+              exit 0
+            fi
+            echo "Intento $intento: la app responde con '${commit:-sin respuesta}', esperando..."
+            sleep 15
+          done
+          echo "::error::La app no mostró el commit $GITHUB_SHA después de 15 minutos"
+          exit 1
